@@ -1,0 +1,110 @@
+# PHP + NGINX Container #----------------------------------
+developer-common:
+  image: laradock/php56nginx:latest
+  container_name: developer-common
+  ports:
+    - "80:80"
+  volumes:
+    - ./settings/nginx:/etc/nginx/sites-enabled/
+    - ../../code:/var/www/
+    - ./logs/nginx:/var/log/nginx/
+  links:
+    - mysql
+    - redis
+    - elasticsearch
+    - mongo
+  privileged: true
+  extra_hosts:
+    - "mysql.loc:192.168.99.100"
+    - "redis.loc:192.168.99.100"
+    - "elasticsearch.loc:192.168.99.100"
+    - "auth.loc:192.168.99.100"
+
+# MySQL Container #----------------------------------------
+mysql:
+  image: mysql:latest
+  container_name: mysql
+  ports:
+    - "3306:3306"
+  volumes_from:
+    - data
+  environment:
+    MYSQL_DATABASE: iplaydeal
+    MYSQL_USER: iplaydeal
+    MYSQL_PASSWORD: 1qaz!QAZ
+    MYSQL_ROOT_PASSWORD: 1qaz!QAZ
+  privileged: true
+
+# Redis Container #----------------------------------------
+redis:
+  image: redis:latest
+  container_name: redis
+  ports:
+    - "6379:6379"
+  volumes_from:
+    - data
+  volumes:
+    - ./logs/redis:/var/log/redis
+  restart: always
+  privileged: true
+
+# Mongo Container #----------------------------------------
+mongo:
+  image: mongo
+  container_name: mongo
+  volumes_from:
+    - data
+  ports:
+    - "27017:27017"
+
+# Data Volume Container #----------------------------------
+data:
+  image: training/postgres:latest
+  container_name: data
+  volumes:
+    - /var/lib/mysql
+    - /var/lib/redis
+    - /data/db
+    - /usr/share/elasticsearch/data
+
+# Elasticsearch
+elasticsearch:
+  image: elasticsearch
+  container_name: elasticsearch
+  ports:
+    - "9200:9200"
+  volumes_from:
+    - data
+  volumes:
+    - ./logs/elasticsearch:/var/log/elasticsearch/
+  restart: always
+  privileged: true
+  
+# PHP + NGINX Container #----------------------------------
+secure-portal:
+  image: laradock/php56nginx:latest
+  container_name: secure-portal
+  ports:
+    - "2016:2016"
+  volumes:
+    - ./settings/nginx:/etc/nginx/sites-enabled/
+    - ../../code:/var/www/
+    - ./logs/nginx:/var/log/nginx/
+  links:
+    - mysql
+    - redis
+  privileged: true
+  extra_hosts:
+    - "mysql.loc:192.168.99.100"
+    - "redis.loc:192.168.99.100"
+    - "elasticsearch.loc:192.168.99.100"
+
+# Beanstalkd Container #-----------------------------------
+# beanstalkd:
+#   image: laradock/beanstalkd:0.1.0
+#   container_name: beanstalkd
+#   ports:
+#     - "11300:11300"
+#   privileged: true
+
+#----------------------------------------------------------
